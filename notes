@@ -11,3 +11,5 @@ es[0].classList += " foo";
 t = e.getElementsByTagName("img")[0]
 origTSrc = t.src
 t.src = "http://newimg"
+
+div with background: url(img.jpg); opacity: 0.5; content: "", tlbr:0, position: absolute, z-index: 1 // front
