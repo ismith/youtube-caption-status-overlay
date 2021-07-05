@@ -1,0 +1,13 @@
+".yt-simple-endpoint .inline-block .style-scope .ytd-thumbnail"
+
+es=document.documentElement.querySelectorAll("a.yt-simple-endpoint.inline-block.style-scope.ytd-thumbnail")
+
+es[0].style.display='none'; // =null to reset
+
+es[0].classList += " foo";
+
+<yt-img-shadow ftl-eligible="" class="style-scope ytd-thumbnail no-transition" style="background-color: transparent;" loaded=""><img id="img" class="style-scope yt-img-shadow" alt="" width="168" src="https://i.ytimg.com/vi/2Lb2BiUC898/hqdefault.jpg?sqp=-oaymwEbCKgBEF5IVfKriqkDDggBFQAAiEIYAXABwAEG&amp;rs=AOn4CLD0S5KVOxEdiDAk-q3mxy9tmhv6kw"></yt-img-shadow>
+
+t = e.getElementsByTagName("img")[0]
+origTSrc = t.src
+t.src = "http://newimg"
