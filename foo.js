@@ -91,12 +91,26 @@ function annotateThumbnails() {
               return p.status === "fulfilled";
             })
             .map((p) => p.value)
-            .join(" ");
           console.log("New classes: " + newClasses);
 
-          tn.classList += " " + newClasses;
+          if (! newClasses.includes("captions-en")
+             || newClasses.includes("captions-en-US")) {
+            // tn.style.display = 'none';
+          }
+
+          if (newClasses === []) {
+            tn.title = "captions-none";
+          } else {
+            tn.title = newClasses.join(" ");
+          }
+          tn.classList += " " + newClasses.join(" ");
         });
       }
     });
   });
 }
+
+window.addEventListener('load', (event) => {
+  annotateThumbnails();
+  console.log('page is fully loaded');
+});
