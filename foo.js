@@ -24,6 +24,7 @@ function getAllVideoThumbnails() {
 // kind: undefined|asr
 function thumbnailCaptions(e) {
   const url = e.href;
+  console.log("thumbnailCaptions: " + e.href);
 
   return fetch(url)
     .then((r) => r.text())
@@ -33,6 +34,11 @@ function thumbnailCaptions(e) {
       const script = Array.prototype.slice
         .call(doc.documentElement.querySelectorAll("body script"))
         .find((e) => e.innerText.includes("var ytInitialPlayerResponse"));
+
+      if (script === undefined) {
+        console.log("ERROR: no ytIPR for: " + url);
+        return {}; 
+      }
 
       const s = script.innerText
         .replace("var ytInitialPlayerResponse = ", "")
@@ -44,8 +50,12 @@ function thumbnailCaptions(e) {
     })
     .then((j) => {
       if (j.captions === undefined) {
+  console.log("thumbnailCaptions: [];" + e.href);
+
         return [];
       } else {
+  console.log("thumbnailCaptions: " + j.captions.playerCaptionsTracklistRenderer.captionTracks.length + ";" + e.href);
+
         return j.captions.playerCaptionsTracklistRenderer.captionTracks;
       }
     });
@@ -71,40 +81,31 @@ function annotateThumbnails() {
 
   thumbnails.forEach((tn) => {
     thumbnailCaptions(tn).then((caps) => {
-      if (caps.length === 0) {
-        const newClasses = "captions-none";
+      const captions = caps.map((c) => {
+        if (c.kind === undefined && c.languageCode === undefined) {
+          return base + "-undefined";
+        } else if (c.kind === undefined) {
+          return base + "-" + c.languageCode;
+        } else {
+          return base + "-asr-" + c.languageCode;
+        }
+      });
+
+      const newClasses = captions;
+      console.log("New classes: " + newClasses);
+
+      if (! (newClasses.includes("captions-en")
+         || newClasses.includes("captions-en-US"))) {
+        console.log("display: none; for " + newClasses.join(" ") + " " + tn.href)
+        tn.style.display = 'none';
+      }
+
+      if (newClasses === []) {
+        tn.title = "captions-none";
+        tn.classList += " captions-none";
       } else {
-        var captions = caps.map((c) => {
-          //  this could go inside allSettled
-          if (c.kind === undefined && c.languageCode === undefined) {
-            return base + "-undefined";
-          } else if (c.kind === undefined) {
-            return base + "-" + c.languageCode;
-          } else {
-            return base + "-asr-" + c.languageCode;
-          }
-        });
-
-        Promise.allSettled(captions).then((captions) => {
-          const newClasses = captions
-            .filter((p) => {
-              return p.status === "fulfilled";
-            })
-            .map((p) => p.value)
-          console.log("New classes: " + newClasses);
-
-          if (! newClasses.includes("captions-en")
-             || newClasses.includes("captions-en-US")) {
-            // tn.style.display = 'none';
-          }
-
-          if (newClasses === []) {
-            tn.title = "captions-none";
-          } else {
-            tn.title = newClasses.join(" ");
-          }
-          tn.classList += " " + newClasses.join(" ");
-        });
+        tn.title = newClasses.join(" ");
+        tn.classList += " " + newClasses.join(" ");
       }
     });
   });
