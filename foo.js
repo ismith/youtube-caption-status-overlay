@@ -8,8 +8,10 @@
 
 // START
 
-function getAllVideoThumbnails() { // -> [Node]
-  const selector = "a.yt-simple-endpoint.inline-block.style-scope.ytd-thumbnail";
+function getAllVideoThumbnails() {
+  // -> [Node]
+  const selector =
+    "a.yt-simple-endpoint.inline-block.style-scope.ytd-thumbnail";
   var nodes = document.documentElement.querySelectorAll(selector);
 
   // NodeList -> [obj (Node)]
@@ -24,39 +26,41 @@ function thumbnailCaptions(e) {
   const url = e.href;
 
   return fetch(url)
-    .then(r => r.text())
-    .then(t => {
+    .then((r) => r.text())
+    .then((t) => {
       const parser = new DOMParser();
-      const doc = parser.parseFromString(t, 'text/html');
-      const script = Array.prototype.slice.call(doc.documentElement.querySelectorAll('body script'))
-        .find(e => e.innerText.includes('var ytInitialPlayerResponse'))
+      const doc = parser.parseFromString(t, "text/html");
+      const script = Array.prototype.slice
+        .call(doc.documentElement.querySelectorAll("body script"))
+        .find((e) => e.innerText.includes("var ytInitialPlayerResponse"));
 
-      const s = script.innerText.replace('var ytInitialPlayerResponse = ', '')
-        .replace(/;var meta.*/, '')
+      const s = script.innerText
+        .replace("var ytInitialPlayerResponse = ", "")
+        .replace(/;var meta.*/, "");
 
       const j = JSON.parse(s);
 
-      return j
+      return j;
     })
-     .then(j => {
-       if (j.captions === undefined) {
-         return []
-       } else {
-         return j.captions.playerCaptionsTracklistRenderer.captionTracks;
-       }
-     })
+    .then((j) => {
+      if (j.captions === undefined) {
+        return [];
+      } else {
+        return j.captions.playerCaptionsTracklistRenderer.captionTracks;
+      }
+    });
 }
 
 function nodeDisplayToggle(e) {
-  if (e.style.display === 'none') {
+  if (e.style.display === "none") {
     e.style.display = null;
   } else {
-    e.style.display = 'none'
+    e.style.display = "none";
   }
 }
 
 function nodeAddClass(e, newClass) {
-  e.classList += (" " + newClass)
+  e.classList += " " + newClass;
 }
 
 // annotates with either 'captions-none' or a list of
@@ -65,30 +69,34 @@ function annotateThumbnails() {
   const thumbnails = getAllVideoThumbnails();
   const base = "captions";
 
-  thumbnails.forEach(tn => {
-    const captions = thumbnailCaptions(e)
-      .then(e => { e
-          .map(c => {
-      if (c.kind === undefined && c.languageCode === undefined) {
-        return base + "-undefined";
-      } else if (c.kind === undefined) {
-        return base + "-" + c.languageCode
+  thumbnails.forEach((tn) => {
+    thumbnailCaptions(tn).then((caps) => {
+      if (caps.length === 0) {
+        const newClasses = "captions-none";
       } else {
-        return base + "-asr-" + c.languageCode
+        var captions = caps.map((c) => {
+          //  this could go inside allSettled
+          if (c.kind === undefined && c.languageCode === undefined) {
+            return base + "-undefined";
+          } else if (c.kind === undefined) {
+            return base + "-" + c.languageCode;
+          } else {
+            return base + "-asr-" + c.languageCode;
+          }
+        });
+
+        Promise.allSettled(captions).then((captions) => {
+          const newClasses = captions
+            .filter((p) => {
+              return p.status === "fulfilled";
+            })
+            .map((p) => p.value)
+            .join(" ");
+          console.log("New classes: " + newClasses);
+
+          tn.classList += " " + newClasses;
+        });
       }
-      })
-      })
+    });
   });
-
-// most of below should be in a promise, not sure where.
-    if (captions.length === 0) {
-      const newClasses = "captions-none"
-    } else {
-      const newClasses = captions.join(" ")
-    }
-
-    console.log("New classes: " + newClasses)
-
-    tn.classList += (" " + newClasses);
-  })
 }
